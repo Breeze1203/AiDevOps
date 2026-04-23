@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI DevOps 值班台</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: rgba(255, 250, 242, 0.92);
+      --panel-strong: #fffaf2;
+      --ink: #1e1b16;
+      --muted: #6f675d;
+      --line: rgba(88, 66, 36, 0.16);
+      --accent: #b5542f;
+      --accent-soft: #f4d7b8;
+      --accent-deep: #7d2f16;
+      --good: #2f7d4a;
+      --warn: #c18418;
+      --bad: #9b2f2f;
+      --shadow: 0 20px 45px rgba(83, 54, 21, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(250, 210, 146, 0.55), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(190, 102, 64, 0.18), transparent 30%),
+        linear-gradient(135deg, #f8f3ea 0%, #efe3d1 45%, #e5d3be 100%);
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+    }
+
+    .brand {
+      padding: 22px 22px 18px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 245, 230, 0.95), rgba(255, 248, 239, 0.7));
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent-deep);
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 31px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.54);
+      border: 1px solid rgba(164, 125, 82, 0.12);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      margin-bottom: 4px;
+    }
+
+    .session-list {
+      overflow: auto;
+      padding: 8px;
+    }
+
+    .session-card {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 18px;
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.2s ease;
+      color: inherit;
+      margin-bottom: 8px;
+    }
+
+    .session-card:hover,
+    .session-card.active {
+      background: rgba(255, 248, 239, 0.96);
+      border-color: rgba(181, 84, 47, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .session-card strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .severity-CRITICAL {
+      color: #fff;
+      background: var(--bad);
+    }
+
+    .severity-HIGH {
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .severity-MEDIUM {
+      color: #553a10;
+      background: #efd49f;
+    }
+
+    .severity-LOW {
+      color: #0d5130;
+      background: #cce8d4;
+    }
+
+    .status-awaiting_decision {
+      color: #5b3b0b;
+      background: #f4dfb2;
+    }
+
+    .status-completed {
+      color: #0b4d30;
+      background: #d4ead9;
+    }
+
+    .footer-note {
+      padding: 16px 18px 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: calc(100vh - 36px);
+    }
+
+    .hero {
+      padding: 26px 28px 18px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(120deg, rgba(255, 244, 224, 0.95), rgba(253, 247, 239, 0.74)),
+        radial-gradient(circle at top right, rgba(181, 84, 47, 0.12), transparent 30%);
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.05;
+    }
+
+    .session-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(164, 125, 82, 0.12);
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent-deep);
+    }
+
+    .card p,
+    .card li,
+    .report,
+    textarea,
+    input,
+    button {
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    .card p,
+    .card li {
+      color: #322a23;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .conversation {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 320px;
+      padding: 16px 18px 18px;
+      gap: 14px;
+    }
+
+    .messages {
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 8px;
+    }
+
+    .message {
+      max-width: 84%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: 0 12px 24px rgba(83, 54, 21, 0.08);
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #c25a33, #954121);
+      color: #fff7f0;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: rgba(255, 253, 249, 0.95);
+      border: 1px solid rgba(164, 125, 82, 0.12);
+    }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      border-radius: 18px;
+      border: 1px solid rgba(164, 125, 82, 0.16);
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--ink);
+      outline: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding: 18px 24px 24px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 251, 246, 0.86);
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-weight: 600;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #bc5d36, #97391c);
+      color: #fff;
+    }
+
+    .approve {
+      background: linear-gradient(135deg, #2e8453, #1f6540);
+      color: #fff;
+    }
+
+    .reject {
+      background: linear-gradient(135deg, #a63d3d, #852727);
+      color: #fff;
+    }
+
+    .secondary {
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--ink);
+      border: 1px solid rgba(164, 125, 82, 0.14);
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 60vh;
+      text-align: center;
+      color: var(--muted);
+      padding: 24px;
+    }
+
+    .report {
+      white-space: pre-wrap;
+      line-height: 1.65;
+      color: #332a22;
+      font-size: 14px;
+    }
+
+    .tiny {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace {
+        min-height: auto;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-top {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel sidebar">
+      <section class="brand">
+        <p class="eyebrow">AI DevOps Console</p>
+        <h1>值班台</h1>
+        <p class="subtle">Kafka 事件进入后自动生成诊断会话，人工可在右侧实时追问并做最后审批。</p>
+      </section>
+      <section class="metrics">
+        <div class="metric">
+          <strong id="metric-total">0</strong>
+          <span class="tiny">当前会话</span>
+        </div>
+        <div class="metric">
+          <strong id="metric-pending">0</strong>
+          <span class="tiny">等待决策</span>
+        </div>
+      </section>
+      <section id="session-list" class="session-list"></section>
+      <section class="footer-note">
+        <div id="dashboard-state">Dashboard WebSocket 连接中...</div>
+      </section>
+    </aside>
+
+    <main class="panel workspace">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <p class="eyebrow">Realtime Incident Session</p>
+            <h2 id="session-title">等待会话进入</h2>
+            <p id="session-subtitle" class="subtle">Kafka 新事件进入后，这里会显示首轮 AI 诊断结果。</p>
+          </div>
+          <div class="session-meta" id="session-meta"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h3>根因与建议</h3>
+          <p id="root-cause">暂无数据</p>
+          <p id="impact-analysis" class="subtle"></p>
+          <ul id="recommendations"></ul>
+        </article>
+        <article class="card">
+          <h3>执行记录</h3>
+          <ul id="execution-log"></ul>
+        </article>
+      </section>
+
+      <section class="conversation">
+        <div id="messages" class="messages">
+          <div class="empty">左侧选择一个会话，或等待 Kafka 转发新事件。</div>
+        </div>
+        <div class="composer">
+          <textarea id="question-input" placeholder="输入追问，例如：为什么 AI 判断应该重启而不是扩容？"></textarea>
+          <button id="ask-button" class="primary">发送追问</button>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="refresh-button" class="secondary">刷新状态</button>
+        <button id="approve-button" class="approve">批准执行</button>
+        <button id="reject-button" class="reject">拒绝执行</button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      sessions: new Map(),
+      selectedSessionId: null,
+      dashboardSocket: null,
+      sessionSocket: null,
+    };
+
+    const elements = {
+      sessionList: document.getElementById("session-list"),
+      dashboardState: document.getElementById("dashboard-state"),
+      metricTotal: document.getElementById("metric-total"),
+      metricPending: document.getElementById("metric-pending"),
+      sessionTitle: document.getElementById("session-title"),
+      sessionSubtitle: document.getElementById("session-subtitle"),
+      sessionMeta: document.getElementById("session-meta"),
+      rootCause: document.getElementById("root-cause"),
+      impactAnalysis: document.getElementById("impact-analysis"),
+      recommendations: document.getElementById("recommendations"),
+      executionLog: document.getElementById("execution-log"),
+      messages: document.getElementById("messages"),
+      questionInput: document.getElementById("question-input"),
+      askButton: document.getElementById("ask-button"),
+      approveButton: document.getElementById("approve-button"),
+      rejectButton: document.getElementById("reject-button"),
+      refreshButton: document.getElementById("refresh-button"),
+    };
+
+    function wsBase() {
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      return `${protocol}://${window.location.host}`;
+    }
+
+    function createBadge(label, className) {
+      const span = document.createElement("span");
+      span.className = `badge ${className}`;
+      span.textContent = label;
+      return span;
+    }
+
+    function renderMetrics() {
+      const sessions = Array.from(state.sessions.values());
+      elements.metricTotal.textContent = String(sessions.length);
+      elements.metricPending.textContent = String(
+        sessions.filter((item) => item.summary?.status === "awaiting_decision").length
+      );
+    }
+
+    function sessionPreview(session) {
+      const cause = session.summary?.root_cause || "等待 AI 诊断";
+      return cause.length > 56 ? `${cause.slice(0, 56)}...` : cause;
+    }
+
+    function sortSessions(items) {
+      return items.sort((a, b) => {
+        const aPending = a.summary?.status === "awaiting_decision" ? 0 : 1;
+        const bPending = b.summary?.status === "awaiting_decision" ? 0 : 1;
+        if (aPending !== bPending) return aPending - bPending;
+        return (a.session_id || "").localeCompare(b.session_id || "");
+      });
+    }
+
+    function renderSessionList() {
+      const sessions = sortSessions(Array.from(state.sessions.values()));
+      renderMetrics();
+      elements.sessionList.innerHTML = "";
+
+      if (!sessions.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.style.minHeight = "240px";
+        empty.textContent = "还没有会话。启动 Kafka 转发器后，新的日志事件会出现在这里。";
+        elements.sessionList.appendChild(empty);
+        return;
+      }
+
+      sessions.forEach((session) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `session-card ${session.session_id === state.selectedSessionId ? "active" : ""}`;
+        button.addEventListener("click", () => selectSession(session.session_id));
+
+        const title = document.createElement("strong");
+        title.textContent = session.session_id;
+        button.appendChild(title);
+
+        const statusRow = document.createElement("div");
+        statusRow.className = "status-row";
+        if (session.summary?.severity) {
+          statusRow.appendChild(createBadge(session.summary.severity, `severity-${session.summary.severity}`));
+        }
+        if (session.summary?.status) {
+          statusRow.appendChild(createBadge(session.summary.status, `status-${session.summary.status}`));
+        }
+        button.appendChild(statusRow);
+
+        const desc = document.createElement("div");
+        desc.className = "tiny";
+        desc.textContent = sessionPreview(session);
+        button.appendChild(desc);
+
+        elements.sessionList.appendChild(button);
+      });
+    }
+
+    function renderMessages(session) {
+      elements.messages.innerHTML = "";
+      const messages = session.messages || [];
+      if (!messages.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.style.minHeight = "220px";
+        empty.textContent = "当前还没有追问记录。";
+        elements.messages.appendChild(empty);
+        return;
+      }
+
+      messages.forEach((content, index) => {
+        const div = document.createElement("div");
+        div.className = `message ${index % 2 === 0 ? "user" : "assistant"}`;
+        div.textContent = content;
+        elements.messages.appendChild(div);
+      });
+      elements.messages.scrollTop = elements.messages.scrollHeight;
+    }
+
+    function renderSessionDetail() {
+      const session = state.sessions.get(state.selectedSessionId);
+      if (!session) {
+        elements.sessionTitle.textContent = "等待会话进入";
+        elements.sessionSubtitle.textContent = "Kafka 新事件进入后，这里会显示首轮 AI 诊断结果。";
+        elements.sessionMeta.innerHTML = "";
+        elements.rootCause.textContent = "暂无数据";
+        elements.impactAnalysis.textContent = "";
+        elements.recommendations.innerHTML = "";
+        elements.executionLog.innerHTML = "";
+        elements.messages.innerHTML = '<div class="empty">左侧选择一个会话，或等待 Kafka 转发新事件。</div>';
+        return;
+      }
+
+      elements.sessionTitle.textContent = session.session_id;
+      elements.sessionSubtitle.textContent = session.summary?.root_cause || "AI 已完成首轮诊断，等待人工追问或审批。";
+      elements.rootCause.textContent = session.summary?.root_cause || "暂无根因描述";
+      elements.impactAnalysis.textContent = session.report || "报告尚未生成，当前停在人工决策前。";
+
+      elements.sessionMeta.innerHTML = "";
+      if (session.summary?.severity) {
+        elements.sessionMeta.appendChild(createBadge(session.summary.severity, `severity-${session.summary.severity}`));
+      }
+      if (session.summary?.status) {
+        elements.sessionMeta.appendChild(createBadge(session.summary.status, `status-${session.summary.status}`));
+      }
+      if (session.summary?.auto_fix_action) {
+        elements.sessionMeta.appendChild(createBadge(`auto: ${session.summary.auto_fix_action}`, "status-awaiting_decision"));
+      }
+
+      elements.recommendations.innerHTML = "";
+      (session.summary?.recommendations || []).forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        elements.recommendations.appendChild(li);
+      });
+
+      elements.executionLog.innerHTML = "";
+      (session.execution_log || []).forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        elements.executionLog.appendChild(li);
+      });
+      if (!session.execution_log?.length) {
+        const li = document.createElement("li");
+        li.textContent = "暂无执行动作";
+        elements.executionLog.appendChild(li);
+      }
+
+      renderMessages(session);
+    }
+
+    function upsertSession(payload) {
+      const prev = state.sessions.get(payload.session_id) || {};
+      const next = {
+        ...prev,
+        ...payload,
+      };
+      state.sessions.set(payload.session_id, next);
+      if (!state.selectedSessionId) {
+        state.selectedSessionId = payload.session_id;
+        connectSessionSocket(payload.session_id);
+      }
+      renderSessionList();
+      if (state.selectedSessionId === payload.session_id) {
+        renderSessionDetail();
+      }
+    }
+
+    async function fetchSessions() {
+      const response = await fetch("/api/sessions");
+      const data = await response.json();
+      (data.sessions || []).forEach((session) => {
+        upsertSession({ session_id: session.session_id, summary: session });
+      });
+    }
+
+    async function fetchSession(sessionId) {
+      const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      upsertSession(data);
+    }
+
+    function connectDashboardSocket() {
+      const socket = new WebSocket(`${wsBase()}/ws/dashboard`);
+      state.dashboardSocket = socket;
+      elements.dashboardState.textContent = "Dashboard WebSocket 连接中...";
+
+      socket.addEventListener("open", () => {
+        elements.dashboardState.textContent = "Dashboard WebSocket 已连接";
+      });
+
+      socket.addEventListener("message", (event) => {
+        const payload = JSON.parse(event.data);
+        if (payload.type === "snapshot") {
+          (payload.sessions || []).forEach((session) => {
+            upsertSession({ session_id: session.session_id, summary: session });
+          });
+          renderSessionList();
+        }
+        if (payload.type === "session_update") {
+          upsertSession(payload);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        elements.dashboardState.textContent = "Dashboard WebSocket 已断开，3 秒后重连";
+        window.setTimeout(connectDashboardSocket, 3000);
+      });
+    }
+
+    function connectSessionSocket(sessionId) {
+      if (state.sessionSocket) {
+        state.sessionSocket.close();
+      }
+
+      const socket = new WebSocket(`${wsBase()}/ws/session/${encodeURIComponent(sessionId)}`);
+      state.sessionSocket = socket;
+
+      socket.addEventListener("message", (event) => {
+        const payload = JSON.parse(event.data);
+        if (payload.type === "snapshot" || payload.type === "session_update" || payload.type === "state") {
+          upsertSession(payload);
+        }
+        if (payload.type === "ask_result" || payload.type === "decision_result") {
+          upsertSession(payload);
+          if (payload.answer) {
+            elements.questionInput.value = "";
+          }
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        if (state.selectedSessionId === sessionId) {
+          window.setTimeout(() => connectSessionSocket(sessionId), 2000);
+        }
+      });
+    }
+
+    function selectSession(sessionId) {
+      state.selectedSessionId = sessionId;
+      renderSessionList();
+      renderSessionDetail();
+      fetchSession(sessionId);
+      connectSessionSocket(sessionId);
+    }
+
+    function sendSessionAction(payload) {
+      if (!state.selectedSessionId || !state.sessionSocket || state.sessionSocket.readyState !== WebSocket.OPEN) {
+        return;
+      }
+      state.sessionSocket.send(JSON.stringify(payload));
+    }
+
+    elements.askButton.addEventListener("click", () => {
+      const question = elements.questionInput.value.trim();
+      if (!question) return;
+      sendSessionAction({ action: "ask", question });
+    });
+
+    elements.approveButton.addEventListener("click", () => {
+      sendSessionAction({ action: "approve" });
+    });
+
+    elements.rejectButton.addEventListener("click", () => {
+      sendSessionAction({ action: "reject" });
+    });
+
+    elements.refreshButton.addEventListener("click", () => {
+      if (state.selectedSessionId) {
+        sendSessionAction({ action: "get_state" });
+        fetchSession(state.selectedSessionId);
+      } else {
+        fetchSessions();
+      }
+    });
+
+    elements.questionInput.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        elements.askButton.click();
+      }
+    });
+
+    fetchSessions();
+    connectDashboardSocket();
+    renderSessionList();
+    renderSessionDetail();
+  </script>
+</body>
+</html>

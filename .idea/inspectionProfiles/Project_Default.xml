@@ -1,0 +1,29 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="pyyaml" />
+          <option value="opencv-python" />
+          <option value="imageio" />
+          <option value="lmdb" />
+          <option value="tqdm" />
+          <option value="rich" />
+          <option value="ffmpeg-python" />
+          <option value="onnx" />
+          <option value="scikit-image" />
+          <option value="albumentations" />
+          <option value="matplotlib" />
+          <option value="imageio-ffmpeg" />
+          <option value="tyro" />
+          <option value="gradio" />
+          <option value="pykalman" />
+          <option value="pillow" />
+          <option value="onnxruntime-gpu" />
+          <option value="transformers" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
