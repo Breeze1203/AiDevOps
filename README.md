@@ -36,8 +36,7 @@ pip install uvicorn
 ## 环境变量模板
 
 项目根目录提供了模板文件：
-
-[/Users/pt/Download/AiDevOps/.env.example](/Users/pt/Download/AiDevOps/.env.example:1)
+env.example
 
 你可以按这个文件准备自己的环境变量，再导出到当前 shell。
 
