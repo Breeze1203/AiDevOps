@@ -330,9 +330,3 @@ ws://127.0.0.1:8000/ws/session/evt-001
 python agent_test.py
 ```
 
-## 下一步建议
-
-1. 把 `tools.py` 中的占位实现替换为真实的日志平台、容器编排、告警系统调用。
-2. 给 `DiagnosticEvent` 增加服务名、环境、集群、namespace、trace_id 等字段，提升问诊质量。
-3. 将 `active_sessions` 从内存字典切到 Redis/Postgres，避免 API 重启丢会话。
-4. 给 WebSocket 前面加鉴权和租户隔离，避免值班台串会话。
