@@ -5,8 +5,11 @@
 ## 当前能力
 
 - 从 Kafka 主题 `ai-diagnostics` 消费诊断事件并自动转发到 API
-- 基于日志和容器指标做错误分类、根因分析和修复建议
-- 在执行修复前进入人工审批节点
+- 基于 `LLM 决策 + tool-calling 调度` 做错误分类、根因分析和修复建议
+- 默认保留硬规则安全兜底，自动修复必须人工批准后才会执行
+- 支持运行时切换 `ChatGPT / Gemini / CloudeCode(Claude API)` 模型
+- 前端展示每个会话 session 的累计 token 消耗
+- 支持可选接入 LangSmith tracing
 - 支持 REST 和 WebSocket 两种人工交互方式
 - 每个事件创建独立 `session_id` 和独立 LangGraph `thread_id`
 - 不同事件并发执行，人工挂起某个会话不会阻塞其他会话
@@ -47,6 +50,16 @@ env.example
 ```bash
 export GOOGLE_API_KEY=your_google_api_key
 export GOOGLE_MODEL=gemini-2.5-flash-lite
+export OPENAI_API_KEY=your_openai_api_key
+export OPENAI_MODEL=gpt-4o-mini
+export CLOUDECODE_API_KEY=your_anthropic_api_key
+export CLOUDECODE_MODEL=claude-3-5-sonnet-latest
+export LLM_PROVIDER=gemini
+export LLM_MODEL=gemini-2.5-flash-lite
+export LANGSMITH_TRACING=true
+export LANGSMITH_API_KEY=your_langsmith_api_key
+export LANGSMITH_ENDPOINT=
+export LANGSMITH_PROJECT=ai-devops
 export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 export KAFKA_TOPIC=ai-diagnostics
 export KAFKA_GROUP_ID=ai-diagnostic-group
@@ -61,8 +74,11 @@ export REDIS_URL=redis://localhost:6379/0
 
 说明：
 
-- 配置 `GOOGLE_API_KEY` 后走真实 Gemini 模型
-- 未配置时走本地规则兜底，方便你先联调 Kafka 和人工干预链路
+- 默认读取 `LLM_PROVIDER + LLM_MODEL` 作为项目当前运行模型
+- 前端可直接切换 provider 和 model name，新建 session 会使用切换后的模型
+- `chatgpt` 走 OpenAI API，`gemini` 走 Google Gemini API，`cloudecode` 走 Anthropic Claude API
+- 未配置对应 API Key 时会回退到本地规则兜底，方便你先联调 Kafka 和人工干预链路
+- 若配置 `LANGSMITH_API_KEY`，服务启动时会自动启用 LangSmith tracing
 
 ## 一条命令启动
 
@@ -333,3 +349,4 @@ python agent_test.py
 
 ![效果图](result.png)
 ![效果图](result-2.png)
+![效果图](result-1.png)
