@@ -1,4 +1,9 @@
 from __future__ import annotations
+"""Kafka 转发器入口。
+
+这个模块不直接做诊断，它只负责把 Kafka 中的故障事件转成 HTTP 请求，
+交给 `api.py` 创建诊断会话。你可以把它理解成“事件入口适配层”。
+"""
 
 import json
 import os
@@ -15,6 +20,7 @@ from models import DiagnosticEvent
 
 
 def build_kafka_consumer() -> KafkaConsumer:
+    """按环境变量构造 Kafka consumer。"""
     topic = os.getenv("KAFKA_TOPIC", "ai-diagnostics")
     bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092").split(",")
     group_id = os.getenv("KAFKA_GROUP_ID", "ai-diagnostic-group")
@@ -29,6 +35,7 @@ def build_kafka_consumer() -> KafkaConsumer:
 
 
 def forward_event_to_api(event_data: dict) -> dict:
+    """把单条事件转发给 API，让 API 创建对应诊断 session。"""
     event = DiagnosticEvent.model_validate(event_data)
     api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
     url = f"{api_base_url.rstrip('/')}/api/diagnostic/start"
@@ -47,11 +54,13 @@ def forward_event_to_api(event_data: dict) -> dict:
 
 
 def retry_failed_queue_path() -> Path:
+    """返回本地失败队列文件路径。"""
     path = os.getenv("FAILED_EVENT_QUEUE_PATH", "failed_events.jsonl")
     return Path(path)
 
 
 def append_failed_event(event_data: dict, error_message: str) -> None:
+    """当转发失败且重试耗尽时，把原始事件落到本地文件。"""
     queue_path = retry_failed_queue_path()
     queue_path.parent.mkdir(parents=True, exist_ok=True)
     record = {
@@ -64,6 +73,10 @@ def append_failed_event(event_data: dict, error_message: str) -> None:
 
 
 def forward_event_with_retry(event_data: dict) -> dict:
+    """带重试地转发事件。
+
+    这里的重试只覆盖“转发到 API”这一步，不负责重放 Kafka 消息本身。
+    """
     max_retries = int(os.getenv("API_FORWARD_MAX_RETRIES", "3"))
     retry_delay = float(os.getenv("API_FORWARD_RETRY_DELAY_SECONDS", "1"))
     attempt = 0
@@ -91,6 +104,7 @@ def forward_event_with_retry(event_data: dict) -> dict:
 
 
 def consume_forever(messages: Iterable):
+    """持续消费 Kafka 消息并交给 API。"""
     api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
     print(f"Kafka forwarder started. Forwarding events to {api_base_url}")
     for message in messages:
@@ -112,6 +126,7 @@ def consume_forever(messages: Iterable):
 
 
 def main():
+    """程序入口：建立 consumer 后进入无限消费循环。"""
     consumer = build_kafka_consumer()
     consume_forever(consumer)
 

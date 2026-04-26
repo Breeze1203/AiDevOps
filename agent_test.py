@@ -1,3 +1,11 @@
+"""项目级集成测试。
+
+这些测试主要覆盖三类行为：
+1. Kafka 转发与失败重试。
+2. API + LangGraph 的首轮诊断 / 追问 / 审批流程。
+3. 模型配置、消息去重和 fallback 行为等回归场景。
+"""
+
 import contextlib
 import json
 import os
@@ -9,11 +17,13 @@ from urllib.error import URLError
 from fastapi.testclient import TestClient
 
 from api import SESSION_LOCKS, SESSION_STORE, api_app
+from llm_runtime import set_runtime_model
 from main import forward_event_to_api, forward_event_with_retry
 from run import main as run_main
 
 
 def build_sample_event(event_id: str) -> dict:
+    """构造一条固定的示例故障事件。"""
     return {
         "id": event_id,
         "timestamp": "2026-04-22T10:00:00",
@@ -45,6 +55,7 @@ def build_sample_event(event_id: str) -> dict:
 
 
 def wait_for_status(client: TestClient, session_id: str, expected: str, timeout: float = 2.0):
+    """轮询 session 状态，直到进入目标状态。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
         response = client.get(f"/api/session/{session_id}")
@@ -55,9 +66,12 @@ def wait_for_status(client: TestClient, session_id: str, expected: str, timeout:
 
 
 class DiagnosticWorkflowTests(unittest.TestCase):
+    """覆盖主要业务链路的测试集合。"""
+
     def setUp(self):
         SESSION_STORE.clear()
         SESSION_LOCKS.clear()
+        set_runtime_model("gemini", "gemini-2.5-flash-lite")
         self.failed_queue_path = "/tmp/ai-devops-failed-events-test.jsonl"
         with contextlib.suppress(FileNotFoundError):
             os.remove(self.failed_queue_path)
@@ -135,6 +149,8 @@ class DiagnosticWorkflowTests(unittest.TestCase):
         self.assertIn(start.json()["summary"]["status"], {"queued", "running"})
 
         wait_for_status(client, "evt-test-002", "awaiting_decision")
+        waiting = client.get("/api/session/evt-test-002")
+        self.assertTrue(waiting.json()["summary"]["approval_required"])
 
         ask = client.post(
             "/api/conversation/ask",
@@ -150,7 +166,100 @@ class DiagnosticWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(decision.status_code, 200)
         self.assertEqual(decision.json()["summary"]["status"], "completed")
+        self.assertFalse(decision.json()["summary"]["approval_required"])
+        self.assertEqual(decision.json()["summary"]["model_provider"], "gemini")
+        self.assertEqual(decision.json()["summary"]["model_name"], "gemini-2.5-flash-lite")
+        self.assertEqual(decision.json()["summary"]["token_usage"]["total_tokens"], 0)
         self.assertTrue(decision.json()["execution_log"])
+
+    def test_runtime_model_can_be_switched(self):
+        client = TestClient(api_app)
+        current = client.get("/api/runtime/model")
+        self.assertEqual(current.status_code, 200)
+        self.assertEqual(current.json()["current"]["provider"], "gemini")
+
+        updated = client.post(
+            "/api/runtime/model",
+            json={"provider": "chatgpt", "model_name": "gpt-4o-mini"},
+        )
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.json()["current"]["provider"], "chatgpt")
+        self.assertEqual(updated.json()["current"]["model_name"], "gpt-4o-mini")
+
+        start = client.post("/api/diagnostic/start", json={"event": build_sample_event("evt-test-runtime-switch")})
+        self.assertEqual(start.status_code, 200)
+
+        wait_for_status(client, "evt-test-runtime-switch", "awaiting_decision")
+        session = client.get("/api/session/evt-test-runtime-switch")
+        self.assertEqual(session.status_code, 200)
+        self.assertEqual(session.json()["summary"]["model_provider"], "chatgpt")
+        self.assertEqual(session.json()["summary"]["model_name"], "gpt-4o-mini")
+
+    def test_auto_fix_stays_pending_until_manual_approval(self):
+        client = TestClient(api_app)
+        client.post("/api/diagnostic/start", json={"event": build_sample_event("evt-test-approval-gate")})
+        wait_for_status(client, "evt-test-approval-gate", "awaiting_decision")
+
+        before = client.get("/api/session/evt-test-approval-gate")
+        self.assertEqual(before.status_code, 200)
+        self.assertFalse(before.json()["summary"]["should_auto_fix"])
+        self.assertTrue(before.json()["summary"]["approval_required"])
+
+        ask = client.post(
+            "/api/conversation/ask",
+            json={"session_id": "evt-test-approval-gate", "question": "现在可以直接自动修复吗？"},
+        )
+        self.assertEqual(ask.status_code, 200)
+        self.assertEqual(ask.json()["summary"]["status"], "awaiting_decision")
+
+        after = client.get("/api/session/evt-test-approval-gate")
+        self.assertEqual(after.status_code, 200)
+        self.assertFalse(after.json()["summary"]["should_auto_fix"])
+        self.assertTrue(after.json()["summary"]["approval_required"])
+
+    def test_conversation_messages_do_not_duplicate_after_multiple_questions(self):
+        client = TestClient(api_app)
+        client.post("/api/diagnostic/start", json={"event": build_sample_event("evt-test-conversation-dedupe")})
+        wait_for_status(client, "evt-test-conversation-dedupe", "awaiting_decision")
+
+        first = client.post(
+            "/api/conversation/ask",
+            json={"session_id": "evt-test-conversation-dedupe", "question": "第一次追问"},
+        )
+        self.assertEqual(first.status_code, 200)
+
+        second = client.post(
+            "/api/conversation/ask",
+            json={"session_id": "evt-test-conversation-dedupe", "question": "第二次追问"},
+        )
+        self.assertEqual(second.status_code, 200)
+
+        session = client.get("/api/session/evt-test-conversation-dedupe")
+        self.assertEqual(session.status_code, 200)
+        messages = session.json()["messages"]
+        self.assertEqual(len(messages), 4)
+        self.assertEqual(messages[0], "第一次追问")
+        self.assertEqual(messages[2], "第二次追问")
+        self.assertEqual(messages.count("第一次追问"), 1)
+        self.assertEqual(messages.count("第二次追问"), 1)
+
+    def test_fallback_conversation_answer_explains_llm_is_not_enabled(self):
+        client = TestClient(api_app)
+        client.post("/api/diagnostic/start", json={"event": build_sample_event("evt-test-fallback-reason")})
+        wait_for_status(client, "evt-test-fallback-reason", "awaiting_decision")
+
+        ask = client.post(
+            "/api/conversation/ask",
+            json={"session_id": "evt-test-fallback-reason", "question": "这个根因为什么成立？"},
+        )
+        self.assertEqual(ask.status_code, 200)
+        self.assertIn("没有在调用真实大模型", ask.json()["answer"])
+        self.assertIn("GOOGLE_API_KEY", ask.json()["answer"])
+
+        session = client.get("/api/session/evt-test-fallback-reason")
+        self.assertEqual(session.status_code, 200)
+        self.assertFalse(session.json()["summary"]["llm_enabled"])
+        self.assertIn("GOOGLE_API_KEY", session.json()["summary"]["llm_status"])
 
     def test_two_sessions_can_progress_independently(self):
         client = TestClient(api_app)

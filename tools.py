@@ -1,4 +1,9 @@
 from __future__ import annotations
+"""Agent 可调用的工具集合。
+
+当前实现大多是占位/模拟工具，目的是先把“LLM 决策 + tool-calling”链路跑通。
+后续接真实平台时，可以只替换工具内部实现，不必改 agent 编排。
+"""
 
 import json
 from typing import List
@@ -71,6 +76,7 @@ def send_alert(severity: str, message: str, channels: List[str]) -> str:
 
 
 TOOLS = [
+    # 统一导出给 agent 进行 bind_tools。
     get_container_stats,
     search_logs,
     query_knowledge_base,

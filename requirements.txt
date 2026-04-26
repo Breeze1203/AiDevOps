@@ -1,8 +1,11 @@
 fastapi
 kafka-python
+langchain-anthropic
 langchain-core
 langchain-google-genai
+langchain-openai
 langgraph
+langsmith
 pydantic
 redis
 uvicorn

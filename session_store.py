@@ -1,4 +1,9 @@
 from __future__ import annotations
+"""会话存储抽象。
+
+API 层只依赖 `SessionStore` 接口，不关心底层到底是内存还是 Redis。
+这样后续切换存储后端时，API 的业务逻辑可以保持不变。
+"""
 
 import json
 import os
@@ -12,6 +17,8 @@ from models import coerce_state
 
 
 class SessionStore(ABC):
+    """统一的会话存储接口。"""
+
     @abstractmethod
     def exists(self, session_id: str) -> bool:
         raise NotImplementedError
@@ -34,6 +41,7 @@ class SessionStore(ABC):
 
 
 def _serialize_session(session: dict[str, Any]) -> dict[str, Any]:
+    """把 session 转成可安全持久化的 JSON 结构。"""
     return {
         "state": coerce_state(session["state"]).model_dump(mode="json"),
         "initial_state": coerce_state(session["initial_state"]).model_dump(mode="json"),
@@ -44,6 +52,7 @@ def _serialize_session(session: dict[str, Any]) -> dict[str, Any]:
 
 
 def _deserialize_session(data: dict[str, Any]) -> dict[str, Any]:
+    """把持久化后的 JSON 结构恢复成运行时 session。"""
     return {
         "state": data["state"],
         "initial_state": data["initial_state"],
@@ -54,6 +63,8 @@ def _deserialize_session(data: dict[str, Any]) -> dict[str, Any]:
 
 
 class MemorySessionStore(SessionStore):
+    """进程内存版存储，适合本地开发和单进程调试。"""
+
     def __init__(self):
         self._data: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
@@ -81,6 +92,8 @@ class MemorySessionStore(SessionStore):
 
 
 class RedisSessionStore(SessionStore):
+    """Redis 版存储，适合多进程或需要跨重启保留 session 的场景。"""
+
     def __init__(self, redis_url: str, prefix: str = "ai-devops:sessions"):
         self._client = redis.Redis.from_url(redis_url, decode_responses=True)
         self._prefix = prefix
@@ -129,6 +142,7 @@ class RedisSessionStore(SessionStore):
 
 
 def build_session_store() -> SessionStore:
+    """按环境变量选择合适的 session 存储后端。"""
     backend = os.getenv("SESSION_STORE_BACKEND", "memory").lower()
     if backend == "redis":
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")

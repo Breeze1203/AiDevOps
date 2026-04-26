@@ -26,23 +26,34 @@
       box-sizing: border-box;
     }
 
+    p {
+      margin: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100dvh;
       color: var(--ink);
       background:
         radial-gradient(circle at top left, rgba(250, 210, 146, 0.55), transparent 32%),
         radial-gradient(circle at bottom right, rgba(190, 102, 64, 0.18), transparent 30%),
         linear-gradient(135deg, #f8f3ea 0%, #efe3d1 45%, #e5d3be 100%);
       font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      overflow: hidden;
     }
 
     .shell {
       display: grid;
       grid-template-columns: 340px 1fr;
       gap: 18px;
-      min-height: 100vh;
+      height: 100dvh;
       padding: 18px;
+      align-items: start;
     }
 
     .panel {
@@ -55,105 +66,275 @@
     }
 
     .sidebar {
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100dvh - 36px);
+      min-height: 0;
     }
 
     .brand {
-      padding: 22px 22px 18px;
+      padding: 16px 16px 12px;
       border-bottom: 1px solid var(--line);
       background:
         linear-gradient(180deg, rgba(255, 245, 230, 0.95), rgba(255, 248, 239, 0.7));
     }
 
     .eyebrow {
-      margin: 0 0 10px;
+      margin: 0 0 6px;
       color: var(--accent-deep);
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.18em;
       text-transform: uppercase;
     }
 
     h1 {
       margin: 0;
-      font-size: 31px;
+      font-size: 28px;
       line-height: 1;
       font-weight: 700;
     }
 
     .subtle {
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 13px;
+      line-height: 1.45;
     }
 
     .metrics {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: nowrap;
+      gap: 8px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--line);
     }
 
+    .runtime-panel {
+      display: grid;
+      gap: 6px;
+      padding: 8px 10px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 247, 236, 0.7);
+      flex: 0 0 auto;
+    }
+
+    .runtime-form {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .runtime-form label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .runtime-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 6px;
+    }
+
+    .runtime-field {
+      min-width: 0;
+    }
+
+    select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(164, 125, 82, 0.16);
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      outline: none;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
     .metric {
-      padding: 14px;
-      border-radius: 18px;
+      flex: 1 1 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 14px;
       background: rgba(255, 255, 255, 0.54);
       border: 1px solid rgba(164, 125, 82, 0.12);
     }
 
     .metric strong {
-      display: block;
-      font-size: 26px;
-      margin-bottom: 4px;
+      display: inline;
+      flex: 0 0 auto;
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 0;
+    }
+
+    .metric .tiny {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .session-list {
+      flex: 1 1 auto;
       overflow: auto;
-      padding: 8px;
+      padding: 6px;
+      min-height: 0;
     }
 
     .session-card {
+      position: relative;
       width: 100%;
-      border: 1px solid transparent;
-      background: transparent;
-      border-radius: 18px;
-      padding: 14px;
+      border: 1px solid rgba(164, 125, 82, 0.14);
+      background:
+        linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(253, 247, 238, 0.92));
+      border-radius: 16px;
+      padding: 11px 11px 10px 14px;
       text-align: left;
       cursor: pointer;
       transition: 0.2s ease;
       color: inherit;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      overflow: hidden;
     }
 
     .session-card:hover,
     .session-card.active {
-      background: rgba(255, 248, 239, 0.96);
-      border-color: rgba(181, 84, 47, 0.22);
-      transform: translateY(-1px);
+      border-color: rgba(181, 84, 47, 0.28);
+      box-shadow: 0 14px 30px rgba(110, 77, 35, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .session-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: rgba(181, 84, 47, 0.18);
+    }
+
+    .session-card.severity-card-CRITICAL::before {
+      background: linear-gradient(180deg, #bc3f35, #8f221d);
+    }
+
+    .session-card.severity-card-HIGH::before {
+      background: linear-gradient(180deg, #c3741f, #a14d18);
+    }
+
+    .session-card.severity-card-MEDIUM::before {
+      background: linear-gradient(180deg, #cfad4e, #b28527);
+    }
+
+    .session-card.severity-card-LOW::before {
+      background: linear-gradient(180deg, #4e9a6a, #2f7750);
+    }
+
+    .session-card.status-card-awaiting_decision {
+      background:
+        linear-gradient(180deg, rgba(255, 248, 233, 0.98), rgba(252, 241, 220, 0.94));
+    }
+
+    .session-card.status-card-completed {
+      background:
+        linear-gradient(180deg, rgba(247, 252, 247, 0.97), rgba(236, 246, 238, 0.94));
+    }
+
+    .session-card.active {
+      outline: 2px solid rgba(181, 84, 47, 0.18);
+      outline-offset: -2px;
     }
 
     .session-card strong {
       display: block;
-      font-size: 16px;
+      font-size: 15px;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .session-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
       margin-bottom: 6px;
+    }
+
+    .session-card-id {
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+      color: #30261d;
+      word-break: break-word;
+    }
+
+    .session-card-token {
+      flex: 0 0 auto;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(164, 125, 82, 0.1);
+      white-space: nowrap;
     }
 
     .status-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+    }
+
+    .session-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    .session-card-model {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .session-card-dot {
+      flex: 0 0 auto;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(125, 47, 22, 0.45);
+    }
+
+    .session-card-preview {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.45;
+      min-height: 2.8em;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
+      gap: 4px;
+      padding: 4px 8px;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       border: 1px solid transparent;
       background: rgba(255, 255, 255, 0.7);
     }
@@ -189,64 +370,96 @@
     }
 
     .footer-note {
-      padding: 16px 18px 18px;
+      padding: 10px 12px 12px;
       border-top: 1px solid var(--line);
       color: var(--muted);
+      font-size: 12px;
+    }
+
+    .runtime-panel input {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(164, 125, 82, 0.16);
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      outline: none;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-size: 13px;
+    }
+
+    .runtime-panel button {
+      padding: 8px 12px;
       font-size: 13px;
     }
 
     .workspace {
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      min-height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+      height: calc(100dvh - 36px);
+      min-height: 0;
     }
 
     .hero {
-      padding: 26px 28px 18px;
+      padding: 14px 18px 12px;
       border-bottom: 1px solid var(--line);
       background:
         linear-gradient(120deg, rgba(255, 244, 224, 0.95), rgba(253, 247, 239, 0.74)),
         radial-gradient(circle at top right, rgba(181, 84, 47, 0.12), transparent 30%);
+      flex: 0 0 auto;
     }
 
     .hero-top {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
+      gap: 10px;
       align-items: flex-start;
     }
 
+    .hero-top > div:first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
     .hero h2 {
-      margin: 0 0 8px;
-      font-size: 34px;
-      line-height: 1.05;
+      margin: 0 0 4px;
+      font-size: 20px;
+      line-height: 1.15;
+      word-break: break-word;
     }
 
     .session-meta {
+      flex: 0 0 auto;
       display: flex;
-      gap: 10px;
+      gap: 6px;
       flex-wrap: wrap;
-      margin-top: 12px;
+      margin-top: 4px;
+      justify-content: flex-end;
+      max-width: 46%;
     }
 
     .grid {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
-      gap: 16px;
-      padding: 16px 18px;
+      gap: 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--line);
+      flex: 0 0 clamp(180px, 20vh, 240px);
+      height: clamp(180px, 20vh, 240px);
     }
 
     .card {
-      padding: 18px;
-      border-radius: 20px;
+      padding: 12px;
+      border-radius: 16px;
       background: rgba(255, 255, 255, 0.62);
       border: 1px solid rgba(164, 125, 82, 0.12);
+      overflow: auto;
+      min-height: 0;
     }
 
     .card h3 {
-      margin: 0 0 12px;
-      font-size: 16px;
+      margin: 0 0 8px;
+      font-size: 14px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--accent-deep);
@@ -264,29 +477,34 @@
     .card p,
     .card li {
       color: #322a23;
-      line-height: 1.6;
-      font-size: 14px;
+      line-height: 1.45;
+      font-size: 13px;
     }
 
     ul {
       margin: 0;
-      padding-left: 18px;
+      padding-left: 16px;
     }
 
     .conversation {
       display: grid;
       grid-template-rows: 1fr auto;
-      min-height: 320px;
-      padding: 16px 18px 18px;
-      gap: 14px;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 12px 14px 14px;
+      gap: 10px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
     }
 
     .messages {
       overflow: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       padding-right: 8px;
+      padding-bottom: 8px;
+      min-height: 0;
     }
 
     .message {
@@ -315,35 +533,39 @@
       grid-template-columns: 1fr auto;
       gap: 12px;
       align-items: end;
+      padding-top: 6px;
+      background: linear-gradient(180deg, rgba(255, 250, 244, 0), rgba(255, 250, 244, 0.92) 28%);
+      flex: 0 0 auto;
     }
 
     textarea {
       width: 100%;
-      min-height: 92px;
+      min-height: 84px;
+      max-height: 160px;
       resize: vertical;
       border-radius: 18px;
       border: 1px solid rgba(164, 125, 82, 0.16);
-      padding: 14px 16px;
+      padding: 12px 14px;
       background: rgba(255, 255, 255, 0.88);
       color: var(--ink);
       outline: none;
     }
 
     .actions {
+      flex: 0 0 auto;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
-      padding: 18px 24px 24px;
-      border-top: 1px solid var(--line);
+      padding: 10px 14px 12px;
       background: rgba(255, 251, 246, 0.86);
     }
 
     button {
       border: none;
       border-radius: 999px;
-      padding: 12px 18px;
-      font-size: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
       cursor: pointer;
       transition: 0.2s ease;
       font-weight: 600;
@@ -377,7 +599,6 @@
     .empty {
       display: grid;
       place-items: center;
-      min-height: 60vh;
       text-align: center;
       color: var(--muted);
       padding: 24px;
@@ -393,23 +614,48 @@
     .tiny {
       font-size: 12px;
       color: var(--muted);
+      word-break: break-word;
     }
 
     @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
       .shell {
         grid-template-columns: 1fr;
+        height: auto;
       }
 
       .workspace {
-        min-height: auto;
+        height: auto;
       }
 
       .grid {
         grid-template-columns: 1fr;
+        height: auto;
+        flex-basis: auto;
       }
 
       .hero-top {
         flex-direction: column;
+      }
+
+      .session-meta {
+        max-width: 100%;
+        justify-content: flex-start;
+      }
+
+      .sidebar {
+        height: auto;
+      }
+
+      .conversation {
+        min-height: 420px;
+      }
+
+      .runtime-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -433,6 +679,22 @@
         </div>
       </section>
       <section id="session-list" class="session-list"></section>
+      <section class="runtime-panel">
+        <div id="runtime-summary" class="tiny">当前模型配置加载中...</div>
+        <div class="runtime-form">
+          <div class="runtime-grid">
+            <div class="runtime-field">
+              <label for="provider-select">Provider</label>
+              <select id="provider-select"></select>
+            </div>
+            <div class="runtime-field">
+              <label for="model-name-input">Model</label>
+              <input id="model-name-input" type="text" placeholder="输入模型名，例如 gpt-4o-mini" />
+            </div>
+          </div>
+          <button id="save-runtime-button" class="secondary" type="button">切换模型</button>
+        </div>
+      </section>
       <section class="footer-note">
         <div id="dashboard-state">Dashboard WebSocket 连接中...</div>
       </section>
@@ -487,11 +749,18 @@
       selectedSessionId: null,
       dashboardSocket: null,
       sessionSocket: null,
+      sessionSocketId: null,
+      sessionReconnectTimer: null,
+      runtimeConfig: null,
     };
 
     const elements = {
       sessionList: document.getElementById("session-list"),
       dashboardState: document.getElementById("dashboard-state"),
+      runtimeSummary: document.getElementById("runtime-summary"),
+      providerSelect: document.getElementById("provider-select"),
+      modelNameInput: document.getElementById("model-name-input"),
+      saveRuntimeButton: document.getElementById("save-runtime-button"),
       metricTotal: document.getElementById("metric-total"),
       metricPending: document.getElementById("metric-pending"),
       sessionTitle: document.getElementById("session-title"),
@@ -521,6 +790,32 @@
       return span;
     }
 
+    function formatTokens(tokenUsage) {
+      const total = tokenUsage?.total_tokens || 0;
+      const input = tokenUsage?.input_tokens || 0;
+      const output = tokenUsage?.output_tokens || 0;
+      return `tokens ${total} (${input}/${output})`;
+    }
+
+    function renderRuntimeConfig() {
+      const config = state.runtimeConfig;
+      if (!config) {
+        elements.runtimeSummary.textContent = "当前模型配置加载中...";
+        return;
+      }
+
+      elements.providerSelect.innerHTML = "";
+      (config.options || []).forEach((option) => {
+        const el = document.createElement("option");
+        el.value = option.provider;
+        el.textContent = `${option.label} (${option.provider})`;
+        el.selected = config.current?.provider === option.provider;
+        elements.providerSelect.appendChild(el);
+      });
+      elements.modelNameInput.value = config.current?.model_name || "";
+      elements.runtimeSummary.textContent = `当前模型: ${config.current?.provider || "-"} / ${config.current?.model_name || "-"}`;
+    }
+
     function renderMetrics() {
       const sessions = Array.from(state.sessions.values());
       elements.metricTotal.textContent = String(sessions.length);
@@ -531,7 +826,7 @@
 
     function sessionPreview(session) {
       const cause = session.summary?.root_cause || "等待 AI 诊断";
-      return cause.length > 56 ? `${cause.slice(0, 56)}...` : cause;
+      return cause.length > 96 ? `${cause.slice(0, 96)}...` : cause;
     }
 
     function sortSessions(items) {
@@ -560,12 +855,28 @@
       sessions.forEach((session) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `session-card ${session.session_id === state.selectedSessionId ? "active" : ""}`;
+        button.className = [
+          "session-card",
+          session.session_id === state.selectedSessionId ? "active" : "",
+          session.summary?.severity ? `severity-card-${session.summary.severity}` : "",
+          session.summary?.status ? `status-card-${session.summary.status}` : "",
+        ].filter(Boolean).join(" ");
         button.addEventListener("click", () => selectSession(session.session_id));
 
-        const title = document.createElement("strong");
+        const top = document.createElement("div");
+        top.className = "session-card-top";
+
+        const title = document.createElement("div");
+        title.className = "session-card-id";
         title.textContent = session.session_id;
-        button.appendChild(title);
+        top.appendChild(title);
+
+        const token = document.createElement("div");
+        token.className = "session-card-token";
+        token.textContent = `${session.summary?.token_usage?.total_tokens || 0} tok`;
+        top.appendChild(token);
+
+        button.appendChild(top);
 
         const statusRow = document.createElement("div");
         statusRow.className = "status-row";
@@ -575,10 +886,31 @@
         if (session.summary?.status) {
           statusRow.appendChild(createBadge(session.summary.status, `status-${session.summary.status}`));
         }
+        if (session.summary?.model_provider && session.summary?.model_name) {
+          statusRow.appendChild(createBadge(`${session.summary.model_provider}:${session.summary.model_name}`, "secondary"));
+        }
         button.appendChild(statusRow);
 
+        const meta = document.createElement("div");
+        meta.className = "session-card-meta";
+        if (session.summary?.model_provider && session.summary?.model_name) {
+          const model = document.createElement("div");
+          model.className = "session-card-model";
+          model.textContent = `${session.summary.model_provider}:${session.summary.model_name}`;
+          meta.appendChild(model);
+        }
+        if (session.summary?.model_provider && session.summary?.model_name) {
+          const dot = document.createElement("span");
+          dot.className = "session-card-dot";
+          meta.appendChild(dot);
+        }
+        const tokenMeta = document.createElement("div");
+        tokenMeta.textContent = formatTokens(session.summary?.token_usage);
+        meta.appendChild(tokenMeta);
+        button.appendChild(meta);
+
         const desc = document.createElement("div");
-        desc.className = "tiny";
+        desc.className = "tiny session-card-preview";
         desc.textContent = sessionPreview(session);
         button.appendChild(desc);
 
@@ -588,7 +920,7 @@
 
     function renderMessages(session) {
       elements.messages.innerHTML = "";
-      const messages = session.messages || [];
+      const messages = dedupeAdjacentMessages(session.messages || []);
       if (!messages.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
@@ -605,6 +937,16 @@
         elements.messages.appendChild(div);
       });
       elements.messages.scrollTop = elements.messages.scrollHeight;
+    }
+
+    function dedupeAdjacentMessages(messages) {
+      const normalized = [];
+      messages.forEach((item) => {
+        if (!normalized.length || normalized[normalized.length - 1] !== item) {
+          normalized.push(item);
+        }
+      });
+      return normalized;
     }
 
     function renderSessionDetail() {
@@ -633,9 +975,16 @@
       if (session.summary?.status) {
         elements.sessionMeta.appendChild(createBadge(session.summary.status, `status-${session.summary.status}`));
       }
+      if (session.summary?.model_provider && session.summary?.model_name) {
+        elements.sessionMeta.appendChild(createBadge(`${session.summary.model_provider}:${session.summary.model_name}`, "secondary"));
+      }
       if (session.summary?.auto_fix_action) {
         elements.sessionMeta.appendChild(createBadge(`auto: ${session.summary.auto_fix_action}`, "status-awaiting_decision"));
       }
+      if (session.summary?.approval_required) {
+        elements.sessionMeta.appendChild(createBadge("manual approval required", "status-awaiting_decision"));
+      }
+      elements.sessionMeta.appendChild(createBadge(formatTokens(session.summary?.token_usage), "secondary"));
 
       elements.recommendations.innerHTML = "";
       (session.summary?.recommendations || []).forEach((item) => {
@@ -684,11 +1033,55 @@
       });
     }
 
+    async function fetchRuntimeConfig() {
+      const response = await fetch("/api/runtime/model");
+      const data = await response.json();
+      state.runtimeConfig = data;
+      renderRuntimeConfig();
+    }
+
+    async function saveRuntimeConfig() {
+      const provider = elements.providerSelect.value;
+      const model_name = elements.modelNameInput.value.trim();
+      if (!provider || !model_name) return;
+      const response = await fetch("/api/runtime/model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, model_name }),
+      });
+      if (!response.ok) return;
+      state.runtimeConfig = await response.json();
+      renderRuntimeConfig();
+    }
+
     async function fetchSession(sessionId) {
       const response = await fetch(`/api/session/${encodeURIComponent(sessionId)}`);
       if (!response.ok) return;
       const data = await response.json();
       upsertSession(data);
+    }
+
+    async function submitAskQuestion(question) {
+      if (!state.selectedSessionId) return;
+      const response = await fetch("/api/conversation/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: state.selectedSessionId, question }),
+      });
+      if (!response.ok) return;
+      elements.questionInput.value = "";
+      await fetchSession(state.selectedSessionId);
+    }
+
+    async function submitDecision(decision) {
+      if (!state.selectedSessionId) return;
+      const response = await fetch("/api/decision/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: state.selectedSessionId, decision }),
+      });
+      if (!response.ok) return;
+      await fetchSession(state.selectedSessionId);
     }
 
     function connectDashboardSocket() {
@@ -719,13 +1112,24 @@
       });
     }
 
-    function connectSessionSocket(sessionId) {
+    function connectSessionSocket(sessionId, force = false) {
+      if (!force && state.sessionSocket && state.sessionSocket.readyState === WebSocket.OPEN && state.sessionSocketId === sessionId) {
+        return;
+      }
+
+      if (state.sessionReconnectTimer) {
+        window.clearTimeout(state.sessionReconnectTimer);
+        state.sessionReconnectTimer = null;
+      }
+
       if (state.sessionSocket) {
+        state.sessionSocket.__manualClose = true;
         state.sessionSocket.close();
       }
 
       const socket = new WebSocket(`${wsBase()}/ws/session/${encodeURIComponent(sessionId)}`);
       state.sessionSocket = socket;
+      state.sessionSocketId = sessionId;
 
       socket.addEventListener("message", (event) => {
         const payload = JSON.parse(event.data);
@@ -733,16 +1137,26 @@
           upsertSession(payload);
         }
         if (payload.type === "ask_result" || payload.type === "decision_result") {
-          upsertSession(payload);
           if (payload.answer) {
             elements.questionInput.value = "";
           }
+          fetchSession(payload.session_id);
         }
       });
 
       socket.addEventListener("close", () => {
-        if (state.selectedSessionId === sessionId) {
-          window.setTimeout(() => connectSessionSocket(sessionId), 2000);
+        const shouldReconnect =
+          !socket.__manualClose &&
+          state.selectedSessionId === sessionId &&
+          state.sessionSocket === socket;
+        if (state.sessionSocket === socket) {
+          state.sessionSocket = null;
+          state.sessionSocketId = null;
+        }
+        if (shouldReconnect) {
+          state.sessionReconnectTimer = window.setTimeout(() => {
+            connectSessionSocket(sessionId, true);
+          }, 2000);
         }
       });
     }
@@ -756,24 +1170,37 @@
     }
 
     function sendSessionAction(payload) {
-      if (!state.selectedSessionId || !state.sessionSocket || state.sessionSocket.readyState !== WebSocket.OPEN) {
-        return;
+      if (!state.selectedSessionId) {
+        return false;
+      }
+      if (!state.sessionSocket || state.sessionSocket.readyState !== WebSocket.OPEN) {
+        return false;
       }
       state.sessionSocket.send(JSON.stringify(payload));
+      return true;
     }
 
-    elements.askButton.addEventListener("click", () => {
+    elements.askButton.addEventListener("click", async () => {
       const question = elements.questionInput.value.trim();
       if (!question) return;
-      sendSessionAction({ action: "ask", question });
+      const sent = sendSessionAction({ action: "ask", question });
+      if (!sent) {
+        await submitAskQuestion(question);
+      }
     });
 
-    elements.approveButton.addEventListener("click", () => {
-      sendSessionAction({ action: "approve" });
+    elements.approveButton.addEventListener("click", async () => {
+      const sent = sendSessionAction({ action: "approve" });
+      if (!sent) {
+        await submitDecision("approve");
+      }
     });
 
-    elements.rejectButton.addEventListener("click", () => {
-      sendSessionAction({ action: "reject" });
+    elements.rejectButton.addEventListener("click", async () => {
+      const sent = sendSessionAction({ action: "reject" });
+      if (!sent) {
+        await submitDecision("reject");
+      }
     });
 
     elements.refreshButton.addEventListener("click", () => {
@@ -783,6 +1210,18 @@
       } else {
         fetchSessions();
       }
+      fetchRuntimeConfig();
+    });
+
+    elements.providerSelect.addEventListener("change", () => {
+      const selected = (state.runtimeConfig?.options || []).find((item) => item.provider === elements.providerSelect.value);
+      if (selected && !elements.modelNameInput.value.trim()) {
+        elements.modelNameInput.value = selected.default_model || "";
+      }
+    });
+
+    elements.saveRuntimeButton.addEventListener("click", () => {
+      saveRuntimeConfig();
     });
 
     elements.questionInput.addEventListener("keydown", (event) => {
@@ -792,6 +1231,7 @@
     });
 
     fetchSessions();
+    fetchRuntimeConfig();
     connectDashboardSocket();
     renderSessionList();
     renderSessionDetail();
